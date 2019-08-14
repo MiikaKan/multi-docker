@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t miikakan/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true miikakan/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t miikakan/multi-client ./client
+  - docker build -t miikakan/multi-nginx ./nginx
+  - docker build -t miikakan/multi-server ./server
+  - docker build -t miikakan/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PW" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take images and push them to docker hub
+  - docker push miikakan/multi-client
+  - docker push miikakan/multi-nginx
+  - docker push miikakan/multi-server
+  - docker push miikakan/multi-worker
